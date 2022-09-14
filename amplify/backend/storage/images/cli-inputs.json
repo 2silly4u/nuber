@@ -1,0 +1,14 @@
+{
+  "resourceName": "images",
+  "policyUUID": "62c4c16c",
+  "bucketName": "nuber",
+  "storageAccess": "auth",
+  "guestAccess": [],
+  "authAccess": [
+    "CREATE_AND_UPDATE",
+    "READ",
+    "DELETE"
+  ],
+  "triggerFunction": "NONE",
+  "groupAccess": {}
+}
