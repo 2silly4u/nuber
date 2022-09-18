@@ -1,20 +1,24 @@
-import { Heading, Link, withAuthenticator } from '@aws-amplify/ui-react';
+import { withAuthenticator } from '@aws-amplify/ui-react';
 import "@aws-amplify/ui-react/styles.css";
 import { API, Storage } from 'aws-amplify';
 import React, { useEffect, useState } from 'react';
 import './App.css';
-import Driver from './Driver';
-import Rider from './Rider';
 import { createNote as createNoteMutation, deleteNote as deleteNoteMutation } from './graphql/mutations';
 import { listNotes } from './graphql/queries';
 
 const initialFormState = { name: '', description: '' }
 
-function App({ signOut }) {
+function Driver({ signOut }) {
   const [notes, setNotes] = useState([]);
   const [formData, setFormData] = useState(initialFormState);
-  const [isDriver, setIsDriver] = useState(false)
-  const [isRider, setIsRider] = useState(false)
+  const [uploaded, setUploaded] = useState(false)
+
+
+    if(!uploaded) {
+        if(notes.length > 0){
+            setUploaded(true);
+        }
+    }
 
   async function onChange(e) {
     if (!e.target.files[0]) return
@@ -42,7 +46,7 @@ function App({ signOut }) {
   }
 
   async function createNote() {
-    if (!formData.name || !formData.description) return;
+    if (!formData.image) return;
     await API.graphql({ query: createNoteMutation, variables: { input: formData } });
     if (formData.image) {
       const image = await Storage.get(formData.image);
@@ -50,31 +54,41 @@ function App({ signOut }) {
     }
     setNotes([ ...notes, formData ]);
     setFormData(initialFormState);
+    setUploaded(true)
   }
 
   async function deleteNote({ id }) {
     const newNotesArray = notes.filter(note => note.id !== id);
     setNotes(newNotesArray);
+    setUploaded(false)
     await API.graphql({ query: deleteNoteMutation, variables: { input: { id } }});
   }
-  const handleDriver = e =>{
-    setIsDriver(current => !current);
-  }
-  const handleRider = e =>{
-    setIsRider(current => !current)
-  }
   return (
-    <div className="bg-slate-800 min-h-screen">
-      <p className='p-4 text-center text-2xl text-white'>Nuber</p>
-      {!isDriver && <div className='flex m-2 space-x-4 justify-center'>
-        <button className='text-white font-bold cursor-pointer rounded-full p-4 text-lg text-center hover:bg-slate-900 border-2 border-slate-900 transition-all duration-200' onClick={handleDriver}>Sign up as a Driver</button>
-        <button className='text-white font-bold cursor-pointer rounded-full p-4 text-lg text-center hover:bg-slate-900 border-2 border-slate-900 transition-all duration-200' onClick={handleRider}>Sign up as a Rider</button>
-      </div>}l
+    <div className="">
+        <div className='flex justify-center'>
+            <button className=' text-white font-bold cursor-pointer rounded-full p-2 text-md text-center hover:bg-slate-900 border-2 border-slate-900 transition-all duration-200' onClick={signOut}>Sign Out</button>
+        </div>
         
-      {isDriver && <Driver/>}
-      {isRider && <Rider/>}
+        {!uploaded && <div className='flex justify-center'>
+            <input className='bg-slate-600 rounded-xl p-1' type="file" onChange={onChange}/>
+            <button className='m-4 p-2 bg-slate-600 hover:bg-slate-700 rounded-xl text-white' onClick={createNote}>Upload Identification</button>
+        </div>
+        }
+        
+        <div className='mt-10 flex justify-center'>
+        {notes.map(note => (
+            <div key={note.id || note.name}>
+                <button className='p-2 bg-slate-600 hover:bg-slate-700 text-white' onClick={() => deleteNote(note)}>Delete Identification</button>
+                {
+                note.image && <img src={note.image} style={{width: 400}} />
+                }
+            </div>
+            )) 
+        }
+        </div>
+        {uploaded && <div className='text-center text-white'><p>Your identification has been uploaded</p></div> }
     </div>
   );
 }
 
-export default App;
+export default withAuthenticator(Driver);
